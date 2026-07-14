@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   Trophy, Medal, Search, RefreshCw, Download, 
-  Key, LogOut, Users, Award, DollarSign, Filter,
+  Key, LogOut, Users, Award, Filter,
   TrendingUp, HelpCircle
 } from 'lucide-react';
 
@@ -33,7 +33,6 @@ export default function App() {
   const [selectedLoja, setSelectedLoja] = useState<string>('all');
   
   // Sort
-  const [sortBy, setSortBy] = useState<'points' | 'cashback'>('points');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Load token from localStorage
@@ -134,7 +133,6 @@ export default function App() {
   const processedConsumers = useMemo(() => {
     return consumers.map(c => {
       let points = 0;
-      let cashback = 0;
       const storesWithScore: string[] = [];
 
       if (Array.isArray(c.pontuacoes)) {
@@ -143,10 +141,8 @@ export default function App() {
           
           if (selectedLoja === 'all') {
             points += p.saldo || 0;
-            cashback += p.cashback || 0;
           } else if (p.loja === selectedLoja) {
             points = p.saldo || 0;
-            cashback = p.cashback || 0;
           }
         });
       }
@@ -154,7 +150,6 @@ export default function App() {
       return {
         ...c,
         displayPoints: points,
-        displayCashback: cashback,
         lojasList: storesWithScore.join(', ') || 'Nenhuma'
       };
     });
@@ -165,19 +160,19 @@ export default function App() {
     let result = processedConsumers.filter(c => {
       const nameMatch = c.nome?.toLowerCase().includes(searchQuery.toLowerCase());
       
-      // If we filtered by store, only keep customers who actually have points/cashback in that store
+      // If we filtered by store, only keep customers who actually have points in that store
       if (selectedLoja !== 'all') {
-        const hasPointsInStore = c.pontuacoes?.some(p => p.loja === selectedLoja && (p.saldo > 0 || p.cashback > 0));
+        const hasPointsInStore = c.pontuacoes?.some(p => p.loja === selectedLoja && p.saldo > 0);
         return nameMatch && hasPointsInStore;
       }
       
       return nameMatch;
     });
 
-    // Sort
+    // Sort by points
     result.sort((a, b) => {
-      let valA = sortBy === 'points' ? a.displayPoints : a.displayCashback;
-      let valB = sortBy === 'points' ? b.displayPoints : b.displayCashback;
+      let valA = a.displayPoints;
+      let valB = b.displayPoints;
       
       if (valA === valB) {
         // Tie breaker by name
@@ -188,19 +183,17 @@ export default function App() {
     });
 
     return result;
-  }, [processedConsumers, searchQuery, sortBy, sortOrder, selectedLoja]);
+  }, [processedConsumers, searchQuery, sortOrder, selectedLoja]);
 
   // Total stats
   const totalStats = useMemo(() => {
     let pts = 0;
-    let cb = 0;
     
     processedConsumers.forEach(c => {
       pts += c.displayPoints;
-      cb += c.displayCashback;
     });
 
-    return { points: pts, cashback: cb };
+    return { points: pts };
   }, [processedConsumers]);
 
   // Top 3 Medalists
@@ -210,26 +203,20 @@ export default function App() {
     return descSorted.slice(0, 3);
   }, [processedConsumers]);
 
-  const handleSort = (field: 'points' | 'cashback') => {
-    if (sortBy === field) {
-      setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
-    } else {
-      setSortBy(field);
-      setSortOrder('desc');
-    }
+  const handleSort = () => {
+    setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
   };
 
   const exportToCSV = () => {
     if (filteredAndRankedConsumers.length === 0) return;
     
-    const headers = ['Posicao', 'Nome', 'Email', 'Telefone', 'Pontos', 'Cashback', 'Pontuacoes por Loja'];
+    const headers = ['Posicao', 'Nome', 'Email', 'Telefone', 'Pontos', 'Pontuacoes por Loja'];
     const rows = filteredAndRankedConsumers.map((c, index) => [
       index + 1,
       c.nome || 'Sem Nome',
       c.email || 'N/A',
       c.telefone || 'N/A',
       c.displayPoints,
-      `R$ ${c.displayCashback.toFixed(2)}`,
       c.lojasList
     ]);
 
@@ -389,7 +376,6 @@ export default function App() {
                     <div className="podium-name" title={topThree[1].nome}>{topThree[1].nome}</div>
                     <div className="podium-points">{topThree[1].displayPoints}</div>
                     <div className="podium-label">Pontos</div>
-                    <div className="podium-cashback">R$ {topThree[1].displayCashback.toFixed(2)} Cashback</div>
                   </div>
                 )}
 
@@ -401,7 +387,6 @@ export default function App() {
                     <div className="podium-name" title={topThree[0].nome} style={{ fontSize: '1.2rem', fontWeight: 700 }}>{topThree[0].nome}</div>
                     <div className="podium-points" style={{ fontSize: '1.8rem' }}>{topThree[0].displayPoints}</div>
                     <div className="podium-label">Pontos</div>
-                    <div className="podium-cashback">R$ {topThree[0].displayCashback.toFixed(2)} Cashback</div>
                   </div>
                 )}
 
@@ -413,7 +398,6 @@ export default function App() {
                     <div className="podium-name" title={topThree[2].nome}>{topThree[2].nome}</div>
                     <div className="podium-points">{topThree[2].displayPoints}</div>
                     <div className="podium-label">Pontos</div>
-                    <div className="podium-cashback">R$ {topThree[2].displayCashback.toFixed(2)} Cashback</div>
                   </div>
                 )}
               </div>
@@ -439,16 +423,6 @@ export default function App() {
               <div className="stat-info">
                 <span className="stat-value">{totalStats.points}</span>
                 <span className="stat-label">Total de Pontos</span>
-              </div>
-            </div>
-
-            <div className="stat-widget">
-              <div className="stat-icon-wrapper" style={{ color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
-                <DollarSign size={24} />
-              </div>
-              <div className="stat-info">
-                <span className="stat-value">R$ {totalStats.cashback.toFixed(2)}</span>
-                <span className="stat-label">Total em Cashback</span>
               </div>
             </div>
           </div>
@@ -508,16 +482,10 @@ export default function App() {
                   <th>Cliente</th>
                   <th style={{ width: '250px' }}>Filiais / Pontuações</th>
                   <th 
-                    style={{ width: '160px', textAlign: 'right' }} 
-                    onClick={() => handleSort('points')}
+                    style={{ width: '160px', textAlign: 'right', cursor: 'pointer' }} 
+                    onClick={handleSort}
                   >
-                    Pontos {sortBy === 'points' && (sortOrder === 'desc' ? '▼' : '▲')}
-                  </th>
-                  <th 
-                    style={{ width: '160px', textAlign: 'right' }} 
-                    onClick={() => handleSort('cashback')}
-                  >
-                    Cashback {sortBy === 'cashback' && (sortOrder === 'desc' ? '▼' : '▲')}
+                    Pontos {sortOrder === 'desc' ? '▼' : '▲'}
                   </th>
                 </tr>
               </thead>
@@ -554,16 +522,13 @@ export default function App() {
                       <td style={{ textAlign: 'right' }} className="points-cell">
                         {customer.displayPoints}
                       </td>
-                      <td style={{ textAlign: 'right' }} className="cashback-cell">
-                        R$ {customer.displayCashback.toFixed(2)}
-                      </td>
                     </tr>
                   );
                 })}
 
                 {filteredAndRankedConsumers.length === 0 && (
                   <tr>
-                    <td colSpan={5} style={{ textAlign: 'center', padding: '40px 0', opacity: 0.5 }}>
+                    <td colSpan={4} style={{ textAlign: 'center', padding: '40px 0', opacity: 0.5 }}>
                       Nenhum resultado corresponde aos filtros aplicados.
                     </td>
                   </tr>
