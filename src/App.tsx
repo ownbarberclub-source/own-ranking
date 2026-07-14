@@ -95,7 +95,7 @@ export default function App() {
           throw new Error(data.MensagemErro || 'Erro desconhecido retornado pela API.');
         }
 
-        const list = data.consumidores || [];
+        const list = data.Consumidores || data.consumidores || [];
         allConsumers = [...allConsumers, ...list];
         
         const total = data.total || 0;
