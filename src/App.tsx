@@ -283,7 +283,13 @@ export default function App() {
     const limitParam = params.get('limit');
     if (limitParam === 'all') return null;
     if (limitParam) return Number(limitParam);
-    return isPublic ? 10 : null; // default to 10 for public/TV display
+    
+    if (isPublic) {
+      // Se a TV estiver em modo vertical (retrato), exibe o Top 15 para preencher melhor a tela
+      const isPortrait = window.innerHeight > window.innerWidth;
+      return isPortrait ? 15 : 10;
+    }
+    return null;
   }, [isPublic]);
 
   const displayedConsumers = useMemo(() => {

@@ -646,3 +646,60 @@ h2 {
 .public-tv .app-footer {
   margin-top: 24px;
 }
+
+@media (orientation: portrait) {
+  .public-tv .main-content {
+    padding: 32px;
+    gap: 32px;
+  }
+  
+  .public-tv .podium-section {
+    gap: 20px;
+    margin-top: 16px;
+  }
+  
+  .public-tv .podium-card {
+    padding: 24px;
+  }
+  
+  .public-tv .podium-card.gold {
+    padding: 36px 24px;
+  }
+  
+  .public-tv .podium-rank {
+    font-size: 2.8rem;
+    margin-bottom: 8px;
+  }
+  
+  .public-tv .podium-name {
+    font-size: 1.5rem;
+  }
+  
+  .public-tv .podium-points {
+    font-size: 2.2rem;
+  }
+  
+  .public-tv .table th, 
+  .public-tv .table td {
+    padding: 22px 24px; /* Taller rows to fill the vertical space */
+  }
+  
+  .public-tv .customer-name {
+    font-size: 1.5rem; /* Large readable text */
+  }
+  
+  .public-tv .points-cell {
+    font-size: 1.7rem; /* Large readable text */
+  }
+  
+  .public-tv .position-badge {
+    width: 44px;
+    height: 44px;
+    font-size: 1.25rem;
+  }
+  
+  .public-tv .app-footer {
+    margin-top: 40px;
+    font-size: 1rem;
+  }
+}
