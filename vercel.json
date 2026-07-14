@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/fidelimax-api/:path*",
+      "destination": "https://api.fidelimax.com.br/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
+  ]
+}
