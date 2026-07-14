@@ -21,18 +21,8 @@ interface Consumer {
 }
 
 // Name masking helper for privacy
-const maskName = (name: string, index: number) => {
-  if (!name) return `Cliente #${index + 1}`;
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 0) return `Cliente #${index + 1}`;
-  
-  const first = parts[0];
-  if (parts.length === 1) {
-    return first.length > 2 ? `${first.substring(0, 2)}***` : '***';
-  }
-  
-  const last = parts[parts.length - 1];
-  return `${first} ${last[0]}.***`;
+const maskName = (index: number) => {
+  return `Cliente #${index + 1}`;
 };
 
 export default function App() {
@@ -435,7 +425,7 @@ export default function App() {
                       <div className="podium-rank">2</div>
                       <Medal size={32} color="#9ca3af" style={{ marginBottom: 8 }} />
                       <div className="podium-name" title={topThree[1].nome}>
-                        {isAnonymous ? maskName(topThree[1].nome, 1) : (topThree[1].nome || 'Sem Nome')}
+                        {isAnonymous ? maskName(1) : (topThree[1].nome || 'Sem Nome')}
                       </div>
                       <div className="podium-points">{topThree[1].displayPoints}</div>
                       <div className="podium-label">Pontos</div>
@@ -448,7 +438,7 @@ export default function App() {
                       <div className="podium-rank">1</div>
                       <Trophy size={48} color="#f59e0b" style={{ marginBottom: 8, filter: 'drop-shadow(0 0 8px rgba(245,158,11,0.4))' }} />
                       <div className="podium-name" title={topThree[0].nome} style={{ fontSize: '1.2rem', fontWeight: 700 }}>
-                        {isAnonymous ? maskName(topThree[0].nome, 0) : (topThree[0].nome || 'Sem Nome')}
+                        {isAnonymous ? maskName(0) : (topThree[0].nome || 'Sem Nome')}
                       </div>
                       <div className="podium-points" style={{ fontSize: '1.8rem' }}>{topThree[0].displayPoints}</div>
                       <div className="podium-label">Pontos</div>
@@ -461,7 +451,7 @@ export default function App() {
                       <div className="podium-rank">3</div>
                       <Medal size={32} color="#b45309" style={{ marginBottom: 8 }} />
                       <div className="podium-name" title={topThree[2].nome}>
-                        {isAnonymous ? maskName(topThree[2].nome, 2) : (topThree[2].nome || 'Sem Nome')}
+                        {isAnonymous ? maskName(2) : (topThree[2].nome || 'Sem Nome')}
                       </div>
                       <div className="podium-points">{topThree[2].displayPoints}</div>
                       <div className="podium-label">Pontos</div>
@@ -622,7 +612,7 @@ export default function App() {
                         </td>
                         <td>
                           <div className="customer-name">
-                            {isAnonymous ? maskName(customer.nome, index) : (customer.nome || 'Sem Nome')}
+                            {isAnonymous ? maskName(index) : (customer.nome || 'Sem Nome')}
                           </div>
                           {!isPublic && (
                             <div className="customer-email">
