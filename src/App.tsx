@@ -278,6 +278,21 @@ export default function App() {
     document.body.removeChild(link);
   };
 
+  // Limit of items in public mode
+  const limitValue = useMemo(() => {
+    const limitParam = params.get('limit');
+    if (limitParam === 'all') return null;
+    if (limitParam) return Number(limitParam);
+    return isPublic ? 10 : null; // default to 10 for public/TV display
+  }, [isPublic]);
+
+  const displayedConsumers = useMemo(() => {
+    if (limitValue !== null) {
+      return filteredAndRankedConsumers.slice(0, limitValue);
+    }
+    return filteredAndRankedConsumers;
+  }, [filteredAndRankedConsumers, limitValue]);
+
   // If token is missing, show setup screen
   if (!token) {
     return (
@@ -317,7 +332,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#030303', position: 'relative' }}>
+    <div className={isPublic ? 'public-tv' : ''} style={{ minHeight: '100vh', background: '#030303', position: 'relative' }}>
       {/* Top Glow & Grid Fundo */}
       <div className="top-glow" />
 
@@ -552,7 +567,7 @@ export default function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAndRankedConsumers.map((customer, index) => {
+                  {displayedConsumers.map((customer, index) => {
                     const pos = index + 1;
                     const isTop3 = pos <= 3 && selectedLoja === 'all' && searchQuery === '';
                     
@@ -594,7 +609,7 @@ export default function App() {
                     );
                   })}
 
-                  {filteredAndRankedConsumers.length === 0 && (
+                  {displayedConsumers.length === 0 && (
                     <tr>
                       <td colSpan={isPublic ? 3 : 4} style={{ textAlign: 'center', padding: '40px 0', opacity: 0.5 }}>
                         Nenhum resultado corresponde aos filtros aplicados.

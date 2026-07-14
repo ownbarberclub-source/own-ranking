@@ -585,3 +585,64 @@ h2 {
   text-transform: uppercase;
   opacity: 0.4;
 }
+
+/* TV / Public Display optimizations */
+.public-tv {
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+.public-tv .main-content {
+  padding: 16px 24px;
+  gap: 20px;
+  max-width: 100%;
+}
+
+.public-tv .podium-section {
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.public-tv .podium-card {
+  padding: 16px 20px;
+}
+
+.public-tv .podium-card.gold {
+  padding: 24px 20px;
+}
+
+.public-tv .podium-rank {
+  font-size: 2.2rem;
+  margin-bottom: 6px;
+}
+
+.public-tv .podium-name {
+  font-size: 1.25rem;
+}
+
+.public-tv .podium-points {
+  font-size: 1.8rem;
+}
+
+.public-tv .table th, 
+.public-tv .table td {
+  padding: 12px 20px;
+}
+
+.public-tv .customer-name {
+  font-size: 1.2rem;
+}
+
+.public-tv .points-cell {
+  font-size: 1.3rem;
+}
+
+.public-tv .position-badge {
+  width: 32px;
+  height: 32px;
+  font-size: 0.95rem;
+}
+
+.public-tv .app-footer {
+  margin-top: 24px;
+}
