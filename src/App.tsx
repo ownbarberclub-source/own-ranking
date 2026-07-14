@@ -244,10 +244,8 @@ export default function App() {
 
   // Top 3 Medalists
   const topThree = useMemo(() => {
-    // Only take top 3 from descending sort
-    const descSorted = [...processedConsumers].sort((a, b) => b.displayPoints - a.displayPoints);
-    return descSorted.slice(0, 3);
-  }, [processedConsumers]);
+    return filteredAndRankedConsumers.slice(0, 3);
+  }, [filteredAndRankedConsumers]);
 
   const handleSort = () => {
     setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
