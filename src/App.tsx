@@ -550,6 +550,40 @@ export default function App() {
               </div>
             )}
 
+            {/* TV Links Section (Only for internal/admin view) */}
+            {!isPublic && (
+              <div className="card" style={{ padding: 20, marginTop: 20, border: '1px solid rgba(225,6,0,0.15)', background: 'rgba(225,6,0,0.02)' }}>
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, color: '#e10600', fontSize: '0.95rem' }}>
+                  <TrendingUp size={16} /> 📺 Links de Transmissão para TVs (Top 10)
+                </h4>
+                <p style={{ fontSize: '0.85rem', marginBottom: 16 }}>
+                  Copie os links abaixo para abrir no navegador das TVs da barbearia. Eles possuem atualização automática a cada 60s.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.3)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border-color)', flexWrap: 'wrap', gap: 10 }}>
+                    <div>
+                      <strong style={{ fontSize: '0.85rem', color: '#f3f4f6' }}>Ranking com Nomes Completos:</strong>
+                      <div style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: 2, fontFamily: 'monospace', wordBreak: 'break-all' }}>https://own-ranking.vercel.app/?public=true</div>
+                    </div>
+                    <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => {
+                      navigator.clipboard.writeText('https://own-ranking.vercel.app/?public=true');
+                      alert('Link copiado!');
+                    }}>Copiar Link</button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.3)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border-color)', flexWrap: 'wrap', gap: 10 }}>
+                    <div>
+                      <strong style={{ fontSize: '0.85rem', color: '#f3f4f6' }}>Ranking Anônimo (LGPD):</strong>
+                      <div style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: 2, fontFamily: 'monospace', wordBreak: 'break-all' }}>https://own-ranking.vercel.app/?public=true&anonymous=true</div>
+                    </div>
+                    <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => {
+                      navigator.clipboard.writeText('https://own-ranking.vercel.app/?public=true&anonymous=true');
+                      alert('Link copiado!');
+                    }}>Copiar Link</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Leaderboard Ranking Table */}
             <div className="table-wrapper">
               <table className="table">
