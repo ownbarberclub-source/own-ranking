@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   Trophy, Medal, Search, RefreshCw, Download, 
-  Key, LogOut, Users, Award, Filter,
-  TrendingUp, HelpCircle
+  Key, LogOut, Users, Award, Filter, TrendingUp
 } from 'lucide-react';
+import Logo from './assets/logo.png';
 
 interface ConsumerScore {
   saldo: number;
@@ -35,6 +35,18 @@ export default function App() {
   // Sort
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  // Hub Integration
+  const hubUserName = window.OwnHub?.getUserName() || 'Administrador';
+  const hubUserInitials = useMemo(() => {
+    return hubUserName
+      .split(' ')
+      .filter(Boolean)
+      .map(word => word[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase() || 'AD';
+  }, [hubUserName]);
+
   // Load token from localStorage
   useEffect(() => {
     const defaultToken = 'a1cdae78-2385-4b31-b5ae-fb38153d4976-1403';
@@ -55,10 +67,9 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('fidelimax_token');
-    setToken('');
-    setConsumers([]);
-    setError('');
+    // Clear Hub session and redirect to Hub portal
+    localStorage.removeItem('@own-hub:session');
+    window.location.href = 'https://ownpainel.vercel.app';
   };
 
   const fetchAllConsumers = async (authToken: string) => {
@@ -232,17 +243,18 @@ export default function App() {
     document.body.removeChild(link);
   };
 
+  // If token is missing, show setup screen
   if (!token) {
     return (
       <div className="setup-wrapper card">
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: 60, height: 60, borderRadius: 16,
+            width: 72, height: 72, borderRadius: 20,
             background: 'rgba(225, 6, 0, 0.1)', border: '1px solid rgba(225, 6, 0, 0.2)',
             color: '#e10600', marginBottom: 16
           }}>
-            <Trophy size={32} />
+            <Trophy size={36} />
           </div>
           <h1>OWN Ranking</h1>
           <p style={{ fontSize: '0.9rem', marginTop: 8 }}>Digite o Token da Fidelimax para gerar o ranking de fidelidade.</p>
@@ -265,284 +277,288 @@ export default function App() {
             <Key size={16} /> Conectar e Sincronizar
           </button>
         </form>
-
-        <div style={{ 
-          marginTop: 24, padding: 16, borderRadius: 12, 
-          background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)',
-          fontSize: '0.8rem', lineHeight: '1.5'
-        }}>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 'bold', marginBottom: 6, color: '#f3f4f6' }}>
-            <HelpCircle size={14} /> Como pegar seu Token?
-          </div>
-          <ol style={{ paddingLeft: 16 }}>
-            <li>Faça login no painel Fidelimax;</li>
-            <li>Vá no menu <strong>Integrações &gt; API da Fidelimax &gt; Quero Integrar</strong>;</li>
-            <li>Copie o seu Token de Integração e cole acima.</li>
-          </ol>
-        </div>
       </div>
     );
   }
 
   return (
-    <div className="app-container">
-      {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: 24 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Trophy size={36} color="#e10600" style={{ filter: 'drop-shadow(0 0 10px rgba(225,6,0,0.5))' }} />
-            <h1>OWN Ranking</h1>
-          </div>
-          <p style={{ marginTop: 4 }}>Painel de pontuação e fidelidade de clientes Fidelimax</p>
-        </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button 
-            className="btn btn-secondary" 
-            onClick={() => fetchAllConsumers(token)}
-            disabled={loading}
-          >
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            Atualizar
-          </button>
-          <button className="btn btn-secondary" onClick={handleLogout}>
-            <LogOut size={16} />
-            Sair
-          </button>
-        </div>
-      </div>
+    <div style={{ minHeight: '100vh', background: '#030303', position: 'relative' }}>
+      {/* Top Glow & Grid Fundo */}
+      <div className="top-glow" />
 
-      {/* Main Loader State */}
-      {loading ? (
-        <div className="card loading-wrapper">
-          <div className="spinner"></div>
-          <div>
-            <h3>Sincronizando consumidores...</h3>
-            <p style={{ fontSize: '0.85rem', marginTop: 4 }}>Isso pode levar alguns instantes dependendo da quantidade de clientes.</p>
-          </div>
-          {progress.total > 0 && (
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#f3f4f6' }}>
-                {progress.current} / {progress.total} clientes
-              </span>
-              <div className="progress-bar-container">
-                <div 
-                  className="progress-bar-fill" 
-                  style={{ width: `${(progress.current / progress.total) * 100}%` }}
-                ></div>
-              </div>
+      {/* Header Padrao */}
+      <header className="app-header">
+        <div className="header-container">
+          <div className="brand-section">
+            <div className="logo-container">
+              <img src={Logo} alt="OWN" className="logo-img" />
             </div>
-          )}
-        </div>
-      ) : error ? (
-        <div className="card" style={{ border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.05)' }}>
-          <h3 style={{ color: '#ef4444', marginBottom: 8 }}>Ocorreu um erro</h3>
-          <p>{error}</p>
-          <button 
-            className="btn btn-primary" 
-            style={{ marginTop: 16 }}
-            onClick={() => fetchAllConsumers(token)}
-          >
-            Tentar Novamente
-          </button>
-        </div>
-      ) : consumers.length === 0 ? (
-        <div className="card empty-state">
-          <Users size={48} className="empty-state-icon" />
-          <h3>Nenhum cliente carregado</h3>
-          <p style={{ marginTop: 8 }}>Clique no botão abaixo para puxar a lista de consumidores da Fidelimax.</p>
-          <button 
-            className="btn btn-primary" 
-            style={{ marginTop: 20 }}
-            onClick={() => fetchAllConsumers(token)}
-          >
-            Sincronizar Agora
-          </button>
-        </div>
-      ) : (
-        <>
-          {/* Top Podium (Medalists) */}
-          {selectedLoja === 'all' && searchQuery === '' && topThree.length > 0 && (
             <div>
-              <h2 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <TrendingUp size={22} color="#e10600" />
-                Líderes de Fidelidade (Top 3)
-              </h2>
-              <div className="podium-section">
-                {/* 2nd Place (Silver) */}
-                {topThree[1] && (
-                  <div className="podium-card silver">
-                    <div className="podium-rank">2</div>
-                    <Medal size={32} color="#9ca3af" style={{ marginBottom: 8 }} />
-                    <div className="podium-name" title={topThree[1].nome}>{topThree[1].nome}</div>
-                    <div className="podium-points">{topThree[1].displayPoints}</div>
-                    <div className="podium-label">Pontos</div>
-                  </div>
-                )}
-
-                {/* 1st Place (Gold) */}
-                {topThree[0] && (
-                  <div className="podium-card gold">
-                    <div className="podium-rank">1</div>
-                    <Trophy size={48} color="#f59e0b" style={{ marginBottom: 8, filter: 'drop-shadow(0 0 8px rgba(245,158,11,0.4))' }} />
-                    <div className="podium-name" title={topThree[0].nome} style={{ fontSize: '1.2rem', fontWeight: 700 }}>{topThree[0].nome}</div>
-                    <div className="podium-points" style={{ fontSize: '1.8rem' }}>{topThree[0].displayPoints}</div>
-                    <div className="podium-label">Pontos</div>
-                  </div>
-                )}
-
-                {/* 3rd Place (Bronze) */}
-                {topThree[2] && (
-                  <div className="podium-card bronze">
-                    <div className="podium-rank">3</div>
-                    <Medal size={32} color="#b45309" style={{ marginBottom: 8 }} />
-                    <div className="podium-name" title={topThree[2].nome}>{topThree[2].nome}</div>
-                    <div className="podium-points">{topThree[2].displayPoints}</div>
-                    <div className="podium-label">Pontos</div>
-                  </div>
-                )}
+              <div className="brand-title">
+                OWN <span>RANKING</span>
               </div>
-            </div>
-          )}
-
-          {/* Stats Widgets */}
-          <div className="stats-grid">
-            <div className="stat-widget">
-              <div className="stat-icon-wrapper">
-                <Users size={24} />
-              </div>
-              <div className="stat-info">
-                <span className="stat-value">{filteredAndRankedConsumers.length}</span>
-                <span className="stat-label">Clientes Filtrados</span>
-              </div>
-            </div>
-
-            <div className="stat-widget">
-              <div className="stat-icon-wrapper" style={{ color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', borderColor: 'rgba(245, 158, 11, 0.2)' }}>
-                <Award size={24} />
-              </div>
-              <div className="stat-info">
-                <span className="stat-value">{totalStats.points}</span>
-                <span className="stat-label">Total de Pontos</span>
-              </div>
+              <div className="brand-subtitle">Clientes Fidelimax</div>
             </div>
           </div>
+          
+          <div className="user-section">
+            <div className="user-info">
+              <div className="user-avatar-initials">{hubUserInitials}</div>
+              <span style={{ opacity: 0.8 }} className="hidden sm:inline">Olá, {hubUserName}</span>
+            </div>
+            <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', gap: 6 }} onClick={handleLogout}>
+              <LogOut size={12} />
+              Sair
+            </button>
+          </div>
+        </div>
+      </header>
 
-          {/* Controls: Search, Store Filter, Export */}
-          <div className="card" style={{ padding: 20 }}>
-            <div className="controls-bar">
-              {/* Search */}
-              <div className="search-input-wrapper" style={{ position: 'relative' }}>
-                <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
-                <input 
-                  type="text"
-                  className="input-field"
-                  placeholder="Pesquisar cliente pelo nome..."
-                  style={{ paddingLeft: 40 }}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-
-              {/* Loja Filter */}
-              {lojasList.length > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <Filter size={16} />
-                  <select 
-                    className="input-field" 
-                    style={{ width: 180, cursor: 'pointer' }}
-                    value={selectedLoja}
-                    onChange={(e) => setSelectedLoja(e.target.value)}
-                  >
-                    <option value="all">Todas as Lojas</option>
-                    {lojasList.map(loja => (
-                      <option key={loja} value={loja}>{loja}</option>
-                    ))}
-                  </select>
+      {/* Main Content Area */}
+      <main className="main-content">
+        {/* Main Loader State */}
+        {loading ? (
+          <div className="card loading-wrapper">
+            <div className="spinner"></div>
+            <div>
+              <h3>Sincronizando consumidores...</h3>
+              <p style={{ fontSize: '0.85rem', marginTop: 4 }}>Isso pode levar alguns instantes dependendo da quantidade de clientes.</p>
+            </div>
+            {progress.total > 0 && (
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#f3f4f6' }}>
+                  {progress.current} / {progress.total} clientes
+                </span>
+                <div className="progress-bar-container">
+                  <div 
+                    className="progress-bar-fill" 
+                    style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                  ></div>
                 </div>
-              )}
-
-              {/* CSV Export */}
-              <button 
-                className="btn btn-secondary" 
-                onClick={exportToCSV}
-                disabled={filteredAndRankedConsumers.length === 0}
-              >
-                <Download size={16} />
-                Exportar CSV
-              </button>
-            </div>
+              </div>
+            )}
           </div>
+        ) : error ? (
+          <div className="card" style={{ border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.05)' }}>
+            <h3 style={{ color: '#ef4444', marginBottom: 8 }}>Ocorreu um erro</h3>
+            <p>{error}</p>
+            <button 
+              className="btn btn-primary" 
+              style={{ marginTop: 16 }}
+              onClick={() => fetchAllConsumers(token)}
+            >
+              Tentar Novamente
+            </button>
+          </div>
+        ) : consumers.length === 0 ? (
+          <div className="card empty-state">
+            <Users size={48} className="empty-state-icon" />
+            <h3>Nenhum cliente carregado</h3>
+            <p style={{ marginTop: 8 }}>Clique no botão abaixo para puxar a lista de consumidores da Fidelimax.</p>
+            <button 
+              className="btn btn-primary" 
+              style={{ marginTop: 20 }}
+              onClick={() => fetchAllConsumers(token)}
+            >
+              Sincronizar Agora
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Top Podium (Medalists) */}
+            {selectedLoja === 'all' && searchQuery === '' && topThree.length > 0 && (
+              <div>
+                <h2 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <TrendingUp size={22} color="#e10600" />
+                  Líderes de Fidelidade (Top 3)
+                </h2>
+                <div className="podium-section">
+                  {/* 2nd Place (Silver) */}
+                  {topThree[1] && (
+                    <div className="podium-card silver">
+                      <div className="podium-rank">2</div>
+                      <Medal size={32} color="#9ca3af" style={{ marginBottom: 8 }} />
+                      <div className="podium-name" title={topThree[1].nome}>{topThree[1].nome}</div>
+                      <div className="podium-points">{topThree[1].displayPoints}</div>
+                      <div className="podium-label">Pontos</div>
+                    </div>
+                  )}
 
-          {/* Leaderboard Ranking Table */}
-          <div className="table-wrapper">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th style={{ width: '80px', textAlign: 'center' }}>Posição</th>
-                  <th>Cliente</th>
-                  <th style={{ width: '250px' }}>Filiais / Pontuações</th>
-                  <th 
-                    style={{ width: '160px', textAlign: 'right', cursor: 'pointer' }} 
-                    onClick={handleSort}
+                  {/* 1st Place (Gold) */}
+                  {topThree[0] && (
+                    <div className="podium-card gold">
+                      <div className="podium-rank">1</div>
+                      <Trophy size={48} color="#f59e0b" style={{ marginBottom: 8, filter: 'drop-shadow(0 0 8px rgba(245,158,11,0.4))' }} />
+                      <div className="podium-name" title={topThree[0].nome} style={{ fontSize: '1.2rem', fontWeight: 700 }}>{topThree[0].nome}</div>
+                      <div className="podium-points" style={{ fontSize: '1.8rem' }}>{topThree[0].displayPoints}</div>
+                      <div className="podium-label">Pontos</div>
+                    </div>
+                  )}
+
+                  {/* 3rd Place (Bronze) */}
+                  {topThree[2] && (
+                    <div className="podium-card bronze">
+                      <div className="podium-rank">3</div>
+                      <Medal size={32} color="#b45309" style={{ marginBottom: 8 }} />
+                      <div className="podium-name" title={topThree[2].nome}>{topThree[2].nome}</div>
+                      <div className="podium-points">{topThree[2].displayPoints}</div>
+                      <div className="podium-label">Pontos</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Stats Widgets */}
+            <div className="stats-grid">
+              <div className="stat-widget">
+                <div className="stat-icon-wrapper">
+                  <Users size={24} />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">{filteredAndRankedConsumers.length}</span>
+                  <span className="stat-label">Clientes Filtrados</span>
+                </div>
+              </div>
+
+              <div className="stat-widget">
+                <div className="stat-icon-wrapper" style={{ color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', borderColor: 'rgba(245, 158, 11, 0.2)' }}>
+                  <Award size={24} />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">{totalStats.points}</span>
+                  <span className="stat-label">Total de Pontos</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Controls: Search, Store Filter, Export */}
+            <div className="card" style={{ padding: 20 }}>
+              <div className="controls-bar">
+                {/* Search */}
+                <div className="search-input-wrapper" style={{ position: 'relative' }}>
+                  <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+                  <input 
+                    type="text"
+                    className="input-field"
+                    placeholder="Pesquisar cliente pelo nome..."
+                    style={{ paddingLeft: 40 }}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                {/* Loja Filter */}
+                {lojasList.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Filter size={16} />
+                    <select 
+                      className="input-field" 
+                      style={{ width: 180, cursor: 'pointer' }}
+                      value={selectedLoja}
+                      onChange={(e) => setSelectedLoja(e.target.value)}
+                    >
+                      <option value="all">Todas as Lojas</option>
+                      {lojasList.map(loja => (
+                        <option key={loja} value={loja}>{loja}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Sync & CSV Export */}
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => fetchAllConsumers(token)}
+                    disabled={loading}
                   >
-                    Pontos {sortOrder === 'desc' ? '▼' : '▲'}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAndRankedConsumers.map((customer, index) => {
-                  const pos = index + 1;
-                  const isTop3 = pos <= 3 && selectedLoja === 'all' && searchQuery === '';
-                  
-                  return (
-                    <tr key={index} className={isTop3 ? 'top3-row' : ''}>
-                      <td style={{ textAlign: 'center' }}>
-                        <span className={`position-badge ${
-                          pos === 1 && selectedLoja === 'all' && searchQuery === '' ? 'pos-1' :
-                          pos === 2 && selectedLoja === 'all' && searchQuery === '' ? 'pos-2' :
-                          pos === 3 && selectedLoja === 'all' && searchQuery === '' ? 'pos-3' : 'pos-other'
-                        }`}>
-                          {pos}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="customer-name">{customer.nome || 'Sem Nome'}</div>
-                        <div className="customer-email">
-                          {customer.email || 'E-mail indisponível'} {customer.telefone && `• ${customer.telefone}`}
-                        </div>
-                      </td>
-                      <td style={{ fontSize: '0.8rem', opacity: 0.8 }} title={customer.lojasList}>
-                        <div style={{
-                          maxWidth: '220px', whiteSpace: 'nowrap', 
-                          overflow: 'hidden', textOverflow: 'ellipsis'
-                        }}>
-                          {customer.lojasList}
-                        </div>
-                      </td>
-                      <td style={{ textAlign: 'right' }} className="points-cell">
-                        {customer.displayPoints}
+                    <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                    Sincronizar
+                  </button>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={exportToCSV}
+                    disabled={filteredAndRankedConsumers.length === 0}
+                  >
+                    <Download size={16} />
+                    Exportar CSV
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Leaderboard Ranking Table */}
+            <div className="table-wrapper">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th style={{ width: '80px', textAlign: 'center' }}>Posição</th>
+                    <th>Cliente</th>
+                    <th style={{ width: '250px' }}>Filiais / Pontuações</th>
+                    <th 
+                      style={{ width: '160px', textAlign: 'right', cursor: 'pointer' }} 
+                      onClick={handleSort}
+                    >
+                      Pontos {sortOrder === 'desc' ? '▼' : '▲'}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAndRankedConsumers.map((customer, index) => {
+                    const pos = index + 1;
+                    const isTop3 = pos <= 3 && selectedLoja === 'all' && searchQuery === '';
+                    
+                    return (
+                      <tr key={index} className={isTop3 ? 'top3-row' : ''}>
+                        <td style={{ textAlign: 'center' }}>
+                          <span className={`position-badge ${
+                            pos === 1 && selectedLoja === 'all' && searchQuery === '' ? 'pos-1' :
+                            pos === 2 && selectedLoja === 'all' && searchQuery === '' ? 'pos-2' :
+                            pos === 3 && selectedLoja === 'all' && searchQuery === '' ? 'pos-3' : 'pos-other'
+                          }`}>
+                            {pos}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="customer-name">{customer.nome || 'Sem Nome'}</div>
+                          <div className="customer-email">
+                            {customer.email || 'E-mail indisponível'} {customer.telefone && `• ${customer.telefone}`}
+                          </div>
+                        </td>
+                        <td style={{ fontSize: '0.8rem', opacity: 0.8 }} title={customer.lojasList}>
+                          <div style={{
+                            maxWidth: '220px', whiteSpace: 'nowrap', 
+                            overflow: 'hidden', textOverflow: 'ellipsis'
+                          }}>
+                            {customer.lojasList}
+                          </div>
+                        </td>
+                        <td style={{ textAlign: 'right' }} className="points-cell">
+                          {customer.displayPoints}
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {filteredAndRankedConsumers.length === 0 && (
+                    <tr>
+                      <td colSpan={4} style={{ textAlign: 'center', padding: '40px 0', opacity: 0.5 }}>
+                        Nenhum resultado corresponde aos filtros aplicados.
                       </td>
                     </tr>
-                  );
-                })}
-
-                {filteredAndRankedConsumers.length === 0 && (
-                  <tr>
-                    <td colSpan={4} style={{ textAlign: 'center', padding: '40px 0', opacity: 0.5 }}>
-                      Nenhum resultado corresponde aos filtros aplicados.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </main>
 
       {/* Footer */}
-      <div className="app-footer">
+      <footer className="app-footer">
         OWN BARBER CLUB • FIDELIMAX INTEGRATION • {new Date().getFullYear()}
-      </div>
+      </footer>
     </div>
   );
 }
