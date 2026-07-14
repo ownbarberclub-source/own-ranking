@@ -38,7 +38,8 @@ export default function App() {
 
   // Load token from localStorage
   useEffect(() => {
-    const savedToken = localStorage.getItem('fidelimax_token');
+    const defaultToken = 'a1cdae78-2385-4b31-b5ae-fb38153d4976-1403';
+    const savedToken = localStorage.getItem('fidelimax_token') || defaultToken;
     if (savedToken) {
       setToken(savedToken);
       setInputToken(savedToken);
