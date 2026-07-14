@@ -20,9 +20,32 @@ interface Consumer {
   pontuacoes: ConsumerScore[];
 }
 
+// Name masking helper for privacy
+const maskName = (name: string, index: number) => {
+  if (!name) return `Cliente #${index + 1}`;
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 0) return `Cliente #${index + 1}`;
+  
+  const first = parts[0];
+  if (parts.length === 1) {
+    return first.length > 2 ? `${first.substring(0, 2)}***` : '***';
+  }
+  
+  const last = parts[parts.length - 1];
+  return `${first} ${last[0]}.***`;
+};
+
 export default function App() {
-  const [token, setToken] = useState<string>('');
-  const [inputToken, setInputToken] = useState<string>('');
+  // Read URL query parameters
+  const params = new URLSearchParams(window.location.search);
+  const isPublic = params.get('public') === 'true' || params.get('live') === 'true';
+  const isAnonymous = params.get('anonymous') === 'true';
+  const defaultToken = 'a1cdae78-2385-4b31-b5ae-fb38153d4976-1403';
+
+  const [token, setToken] = useState<string>(() => {
+    return localStorage.getItem('fidelimax_token') || (isPublic ? defaultToken : '');
+  });
+  const [inputToken, setInputToken] = useState<string>(token);
   const [consumers, setConsumers] = useState<Consumer[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
@@ -47,16 +70,28 @@ export default function App() {
       .toUpperCase() || 'AD';
   }, [hubUserName]);
 
-  // Load token from localStorage
+  // Load token from localStorage or use default
   useEffect(() => {
-    const defaultToken = 'a1cdae78-2385-4b31-b5ae-fb38153d4976-1403';
-    const savedToken = localStorage.getItem('fidelimax_token') || defaultToken;
-    if (savedToken) {
-      setToken(savedToken);
-      setInputToken(savedToken);
-      fetchAllConsumers(savedToken);
+    if (token) {
+      fetchAllConsumers(token);
+    } else {
+      const savedToken = localStorage.getItem('fidelimax_token') || defaultToken;
+      if (savedToken) {
+        setToken(savedToken);
+        setInputToken(savedToken);
+        fetchAllConsumers(savedToken);
+      }
     }
   }, []);
+
+  // Auto-refresh in public/live mode every 60 seconds
+  useEffect(() => {
+    if (!isPublic || !token) return;
+    const interval = setInterval(() => {
+      fetchAllConsumers(token);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [isPublic, token]);
 
   const handleSaveToken = (e: React.FormEvent) => {
     e.preventDefault();
@@ -301,16 +336,18 @@ export default function App() {
             </div>
           </div>
           
-          <div className="user-section">
-            <div className="user-info">
-              <div className="user-avatar-initials">{hubUserInitials}</div>
-              <span style={{ opacity: 0.8 }} className="hidden sm:inline">Olá, {hubUserName}</span>
+          {!isPublic && (
+            <div className="user-section">
+              <div className="user-info">
+                <div className="user-avatar-initials">{hubUserInitials}</div>
+                <span style={{ opacity: 0.8 }} className="hidden sm:inline">Olá, {hubUserName}</span>
+              </div>
+              <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', gap: 6 }} onClick={handleLogout}>
+                <LogOut size={12} />
+                Sair
+              </button>
             </div>
-            <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', gap: 6 }} onClick={handleLogout}>
-              <LogOut size={12} />
-              Sair
-            </button>
-          </div>
+          )}
         </div>
       </header>
 
@@ -378,7 +415,9 @@ export default function App() {
                     <div className="podium-card silver">
                       <div className="podium-rank">2</div>
                       <Medal size={32} color="#9ca3af" style={{ marginBottom: 8 }} />
-                      <div className="podium-name" title={topThree[1].nome}>{topThree[1].nome}</div>
+                      <div className="podium-name" title={topThree[1].nome}>
+                        {isAnonymous ? maskName(topThree[1].nome, 1) : (topThree[1].nome || 'Sem Nome')}
+                      </div>
                       <div className="podium-points">{topThree[1].displayPoints}</div>
                       <div className="podium-label">Pontos</div>
                     </div>
@@ -389,7 +428,9 @@ export default function App() {
                     <div className="podium-card gold">
                       <div className="podium-rank">1</div>
                       <Trophy size={48} color="#f59e0b" style={{ marginBottom: 8, filter: 'drop-shadow(0 0 8px rgba(245,158,11,0.4))' }} />
-                      <div className="podium-name" title={topThree[0].nome} style={{ fontSize: '1.2rem', fontWeight: 700 }}>{topThree[0].nome}</div>
+                      <div className="podium-name" title={topThree[0].nome} style={{ fontSize: '1.2rem', fontWeight: 700 }}>
+                        {isAnonymous ? maskName(topThree[0].nome, 0) : (topThree[0].nome || 'Sem Nome')}
+                      </div>
                       <div className="podium-points" style={{ fontSize: '1.8rem' }}>{topThree[0].displayPoints}</div>
                       <div className="podium-label">Pontos</div>
                     </div>
@@ -400,7 +441,9 @@ export default function App() {
                     <div className="podium-card bronze">
                       <div className="podium-rank">3</div>
                       <Medal size={32} color="#b45309" style={{ marginBottom: 8 }} />
-                      <div className="podium-name" title={topThree[2].nome}>{topThree[2].nome}</div>
+                      <div className="podium-name" title={topThree[2].nome}>
+                        {isAnonymous ? maskName(topThree[2].nome, 2) : (topThree[2].nome || 'Sem Nome')}
+                      </div>
                       <div className="podium-points">{topThree[2].displayPoints}</div>
                       <div className="podium-label">Pontos</div>
                     </div>
@@ -409,84 +452,88 @@ export default function App() {
               </div>
             )}
 
-            {/* Stats Widgets */}
-            <div className="stats-grid">
-              <div className="stat-widget">
-                <div className="stat-icon-wrapper">
-                  <Users size={24} />
-                </div>
-                <div className="stat-info">
-                  <span className="stat-value">{filteredAndRankedConsumers.length}</span>
-                  <span className="stat-label">Clientes Filtrados</span>
-                </div>
-              </div>
-
-              <div className="stat-widget">
-                <div className="stat-icon-wrapper" style={{ color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', borderColor: 'rgba(245, 158, 11, 0.2)' }}>
-                  <Award size={24} />
-                </div>
-                <div className="stat-info">
-                  <span className="stat-value">{totalStats.points}</span>
-                  <span className="stat-label">Total de Pontos</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Controls: Search, Store Filter, Export */}
-            <div className="card" style={{ padding: 20 }}>
-              <div className="controls-bar">
-                {/* Search */}
-                <div className="search-input-wrapper" style={{ position: 'relative' }}>
-                  <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
-                  <input 
-                    type="text"
-                    className="input-field"
-                    placeholder="Pesquisar cliente pelo nome..."
-                    style={{ paddingLeft: 40 }}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-
-                {/* Loja Filter */}
-                {lojasList.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Filter size={16} />
-                    <select 
-                      className="input-field" 
-                      style={{ width: 180, cursor: 'pointer' }}
-                      value={selectedLoja}
-                      onChange={(e) => setSelectedLoja(e.target.value)}
-                    >
-                      <option value="all">Todas as Lojas</option>
-                      {lojasList.map(loja => (
-                        <option key={loja} value={loja}>{loja}</option>
-                      ))}
-                    </select>
+            {/* Stats Widgets (Only for internal/admin view) */}
+            {!isPublic && (
+              <div className="stats-grid">
+                <div className="stat-widget">
+                  <div className="stat-icon-wrapper">
+                    <Users size={24} />
                   </div>
-                )}
+                  <div className="stat-info">
+                    <span className="stat-value">{filteredAndRankedConsumers.length}</span>
+                    <span className="stat-label">Clientes Filtrados</span>
+                  </div>
+                </div>
 
-                {/* Sync & CSV Export */}
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <button 
-                    className="btn btn-secondary" 
-                    onClick={() => fetchAllConsumers(token)}
-                    disabled={loading}
-                  >
-                    <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-                    Sincronizar
-                  </button>
-                  <button 
-                    className="btn btn-secondary" 
-                    onClick={exportToCSV}
-                    disabled={filteredAndRankedConsumers.length === 0}
-                  >
-                    <Download size={16} />
-                    Exportar CSV
-                  </button>
+                <div className="stat-widget">
+                  <div className="stat-icon-wrapper" style={{ color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', borderColor: 'rgba(245, 158, 11, 0.2)' }}>
+                    <Award size={24} />
+                  </div>
+                  <div className="stat-info">
+                    <span className="stat-value">{totalStats.points}</span>
+                    <span className="stat-label">Total de Pontos</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Controls (Only for internal/admin view) */}
+            {!isPublic && (
+              <div className="card" style={{ padding: 20 }}>
+                <div className="controls-bar">
+                  {/* Search */}
+                  <div className="search-input-wrapper" style={{ position: 'relative' }}>
+                    <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+                    <input 
+                      type="text"
+                      className="input-field"
+                      placeholder="Pesquisar cliente pelo nome..."
+                      style={{ paddingLeft: 40 }}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Loja Filter */}
+                  {lojasList.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <Filter size={16} />
+                      <select 
+                        className="input-field" 
+                        style={{ width: 180, cursor: 'pointer' }}
+                        value={selectedLoja}
+                        onChange={(e) => setSelectedLoja(e.target.value)}
+                      >
+                        <option value="all">Todas as Lojas</option>
+                        {lojasList.map(loja => (
+                          <option key={loja} value={loja}>{loja}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Sync & CSV Export */}
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <button 
+                      className="btn btn-secondary" 
+                      onClick={() => fetchAllConsumers(token)}
+                      disabled={loading}
+                    >
+                      <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                      Sincronizar
+                    </button>
+                    <button 
+                      className="btn btn-secondary" 
+                      onClick={exportToCSV}
+                      disabled={filteredAndRankedConsumers.length === 0}
+                    >
+                      <Download size={16} />
+                      Exportar CSV
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Leaderboard Ranking Table */}
             <div className="table-wrapper">
@@ -495,7 +542,7 @@ export default function App() {
                   <tr>
                     <th style={{ width: '80px', textAlign: 'center' }}>Posição</th>
                     <th>Cliente</th>
-                    <th style={{ width: '250px' }}>Filiais / Pontuações</th>
+                    {!isPublic && <th style={{ width: '250px' }}>Filiais / Pontuações</th>}
                     <th 
                       style={{ width: '160px', textAlign: 'right', cursor: 'pointer' }} 
                       onClick={handleSort}
@@ -521,19 +568,25 @@ export default function App() {
                           </span>
                         </td>
                         <td>
-                          <div className="customer-name">{customer.nome || 'Sem Nome'}</div>
-                          <div className="customer-email">
-                            {customer.email || 'E-mail indisponível'} {customer.telefone && `• ${customer.telefone}`}
+                          <div className="customer-name">
+                            {isAnonymous ? maskName(customer.nome, index) : (customer.nome || 'Sem Nome')}
                           </div>
+                          {!isPublic && (
+                            <div className="customer-email">
+                              {customer.email || 'E-mail indisponível'} {customer.telefone && `• ${customer.telefone}`}
+                            </div>
+                          )}
                         </td>
-                        <td style={{ fontSize: '0.8rem', opacity: 0.8 }} title={customer.lojasList}>
-                          <div style={{
-                            maxWidth: '220px', whiteSpace: 'nowrap', 
-                            overflow: 'hidden', textOverflow: 'ellipsis'
-                          }}>
-                            {customer.lojasList}
-                          </div>
-                        </td>
+                        {!isPublic && (
+                          <td style={{ fontSize: '0.8rem', opacity: 0.8 }} title={customer.lojasList}>
+                            <div style={{
+                              maxWidth: '220px', whiteSpace: 'nowrap', 
+                              overflow: 'hidden', textOverflow: 'ellipsis'
+                            }}>
+                              {customer.lojasList}
+                            </div>
+                          </td>
+                        )}
                         <td style={{ textAlign: 'right' }} className="points-cell">
                           {customer.displayPoints}
                         </td>
@@ -543,7 +596,7 @@ export default function App() {
 
                   {filteredAndRankedConsumers.length === 0 && (
                     <tr>
-                      <td colSpan={4} style={{ textAlign: 'center', padding: '40px 0', opacity: 0.5 }}>
+                      <td colSpan={isPublic ? 3 : 4} style={{ textAlign: 'center', padding: '40px 0', opacity: 0.5 }}>
                         Nenhum resultado corresponde aos filtros aplicados.
                       </td>
                     </tr>

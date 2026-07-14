@@ -135,6 +135,14 @@ function showBlockedScreen(): void {
 
 // ─── Verificação Principal ──────────────────────────────────
 (function checkAccess() {
+  // Ignora bloqueio para visualização de ranking público/live
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('public') === 'true' || params.get('live') === 'true') {
+    console.log('[OWN Hub] 🔓 Visualização pública liberada.');
+    setupApi();
+    return;
+  }
+
   // 1. Token relay vindo do Hub na URL
   const relaySession = parseRelayFromUrl();
   if (relaySession) {
